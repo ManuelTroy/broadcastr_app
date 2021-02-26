@@ -40,6 +40,9 @@ dependencies:
   provider: ^4.3.3
   flutter_spinkit: "^4.1.2"
   pinput: ^1.0.0
+  fluttertoast:
+  country_list_pick:
+  shared_preferences:
   
 
 
