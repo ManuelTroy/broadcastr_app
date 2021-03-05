@@ -7,69 +7,55 @@ import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key key, this.user}) : super(key: key);
-  final FirebaseUser user;
-  
+  final User user;
 
- @override
+  @override
   _HomeScreenState createState() => _HomeScreenState();
-
-
 }
-  
 
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _auth = AuthService();
 
   @override
 
- // Top section
-     Widget get topSection =>   Container(
-          height: 100.0,
-          padding: EdgeInsets.only(bottom: 15.0),
-            alignment: Alignment(0.0, 1.0),
-          child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text('My Feed',  style: TextStyle(
-                         color: Colors.black)),
-                Container(
-                  width: 15.0,
-                ),
-                Text('tdf',
-                    style: TextStyle(
-                        fontSize: 17.0, fontWeight: FontWeight.bold, color: Colors.black)),
-                        
-              ]),
-        );
+  // Top section
+  Widget get topSection => Container(
+        height: 100.0,
+        padding: EdgeInsets.only(bottom: 15.0),
+        alignment: Alignment(0.0, 1.0),
+        child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text('My Feed', style: TextStyle(color: Colors.black)),
+              Container(
+                width: 15.0,
+              ),
+              Text('tdf',
+                  style: TextStyle(
+                      fontSize: 17.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black)),
+            ]),
+      );
 
-
-       // Middle expanded
-        Widget get middleSection =>  Expanded(
-        child: Stack(
-                  children:<Widget>[ 
-            Positioned(
-              top: 280,
-              left: 300,
-              child: ActionsToolbar(),
-            ),
-
-          VideoDescription(),
-           FollowIcon(),
-          ]
-        ));
+  // Middle expanded
+  Widget get middleSection => Expanded(
+          child: Stack(children: <Widget>[
+        Positioned(
+          top: 280,
+          left: 300,
+          child: ActionsToolbar(),
+        ),
+        VideoDescription(),
+        FollowIcon(),
+      ]));
 
   Widget build(BuildContext context) {
-  return Scaffold(
-    body: Column(
-      children: <Widget>[
-       
-     topSection,
-     middleSection
-       
-       
-      ],
-    ),
-  );
-}
+    return Scaffold(
+      body: Column(
+        children: <Widget>[topSection, middleSection],
+      ),
+    );
+  }
 }

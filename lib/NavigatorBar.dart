@@ -6,13 +6,14 @@ import 'package:broadcastr_ui/tik_tok_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 class MyNavigationBar extends StatefulWidget {
+  int index;
+  MyNavigationBar({this.index});
   @override
   _MyNavigationBarState createState() => _MyNavigationBarState();
 }
 
 class _MyNavigationBarState extends State<MyNavigationBar> {
   int _currentIndex = 0;
-
   final tabs = [
     HomeScreen(),
     SearchPage(),
@@ -20,6 +21,13 @@ class _MyNavigationBarState extends State<MyNavigationBar> {
     InboxPage(),
     ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _currentIndex = widget.index;
+  }
 
   @override
   Widget build(BuildContext context) {

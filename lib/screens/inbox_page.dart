@@ -52,7 +52,7 @@ class _InboxPageState extends State<InboxPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => PhoneRegister()),
+                                builder: (context) => PhoneRegister(false)),
                           )
                         },
                         child: new Text('Sign Up'),

@@ -8,14 +8,14 @@ import 'NavigatorBar.dart';
 class Wrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<User>(context);
+    final user = Provider.of<UserModel>(context);
     print(user);
 
     // return either Home or Authenticate Widget
     if (user == null) {
       return Authenticate();
     } else {
-      return MyNavigationBar();
+      return MyNavigationBar(index: 0);
     }
   }
 }

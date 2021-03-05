@@ -1,3 +1,6 @@
+import 'package:broadcastr_ui/screens/RegisterationForm.dart';
+import 'package:broadcastr_ui/services/auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -8,7 +11,12 @@ import 'otp_input.dart';
 
 class OTPScreen extends StatefulWidget {
   final String mobileNumber, phone;
-  OTPScreen({Key key, @required this.phone, @required this.mobileNumber})
+  bool checkSignIn;
+  OTPScreen(
+      {Key key,
+      @required this.phone,
+      @required this.mobileNumber,
+      @required this.checkSignIn})
       : assert(mobileNumber != null),
         super(key: key);
 
@@ -169,21 +177,34 @@ class _OTPScreenState extends State<OTPScreen> {
     });
     final PhoneVerificationCompleted verificationCompleted =
         (AuthCredential phoneAuthCredential) {
-      _firebaseAuth
-          .signInWithCredential(phoneAuthCredential)
-          .then((AuthResult value) {
+      _firebaseAuth.signInWithCredential(phoneAuthCredential).then((value) {
         if (value.user != null) {
           // Handle loogged in state
-          saveUserInfo();
           print(value.user.phoneNumber);
           Navigator.of(context).pop();
 
-          Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => MyNavigationBar()));
+          if (widget.checkSignIn) {
+            Navigator.of(context).pop();
+            checkUserExist(value.user.uid);
+          } else {
+            Navigator.of(context).pop();
+            saveUserInfo(value.user.uid);
+
+            Navigator.of(context).pushReplacement(MaterialPageRoute(
+                builder: (context) => RegistrationForm(
+                    PhoneNumber: widget.mobileNumber,
+                    uid: value.user.uid,
+                    email: "",
+                    password: "")));
+          }
         } else {
+          Navigator.of(context).pop();
+
           showToast("Error validating OTP, try again", Colors.red);
         }
       }).catchError((error) {
+        Navigator.of(context).pop();
+
         showToast("Try again in sometime", Colors.red);
       });
     };
@@ -221,51 +242,61 @@ class _OTPScreenState extends State<OTPScreen> {
         codeAutoRetrievalTimeout: codeAutoRetrievalTimeout);
   }
 
-  void _onFormSubmitted() async {
-    AuthCredential _authCredential = PhoneAuthProvider.getCredential(
-        verificationId: _verificationId, smsCode: _pinEditingController.text);
-
-    _firebaseAuth
-        .signInWithCredential(_authCredential)
-        .then((AuthResult value) {
-      if (value.user != null) {
-        saveUserInfo();
-        // Handle logged in state
+  checkUserExist(String uid) async {
+    await FirebaseFirestore.instance
+        .collection("Users")
+        .where("mobileNumber", isEqualTo: widget.mobileNumber)
+        .get()
+        .then((value) {
+      if (value.docs.length > 0) {
+        saveUserInfo(uid);
         Navigator.of(context).pop();
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => MyNavigationBar()));
-        print(value.user.phoneNumber);
+            MaterialPageRoute(builder: (context) => MyNavigationBar(index: 0)));
       } else {
-        showToast("Error validating OTP, try again", Colors.red);
+        AuthService().signOut();
+
+        showToast("User not exist SignUp", Colors.red);
       }
-    }).catchError((error) {
-      showToast("Something went wrong", Colors.red);
+    }).catchError((onError) {
+      Navigator.of(context).pop();
     });
   }
 
-  displayDialog(String message) async {
-    await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
-            title: Text("Remember Your Password"),
-            content: Text(message),
-            actions: <Widget>[
-              FlatButton(
-                child: Text("Ok"),
-                onPressed: () {
-                  _signOut();
-                  Navigator.of(context).pop(true);
-                  // Navigator.of(context).pushAndRemoveUntil(
-                  //   MaterialPageRoute(builder: (context) => SignInPage()),
-                  //   (route) => false,
-                  // );
-                },
-              )
-            ],
-          );
-        });
+  void _onFormSubmitted() async {
+    _dialog(context);
+    AuthCredential _authCredential = PhoneAuthProvider.credential(
+        verificationId: _verificationId, smsCode: _pinEditingController.text);
+
+    _firebaseAuth.signInWithCredential(_authCredential).then((value) {
+      if (value.user != null) {
+        // Handle logged in state
+        Navigator.of(context).pop();
+        if (widget.checkSignIn) {
+          Navigator.of(context).pop();
+          checkUserExist(value.user.uid);
+        } else {
+          Navigator.of(context).pop();
+          saveUserInfo(value.user.uid);
+
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+              builder: (context) => RegistrationForm(
+                  PhoneNumber: widget.mobileNumber,
+                  uid: value.user.uid,
+                  email: "",
+                  password: "")));
+        }
+        print(value.user.phoneNumber);
+      } else {
+        Navigator.of(context).pop();
+
+        showToast("Error validating OTP, try again", Colors.red);
+      }
+    }).catchError((error) {
+      Navigator.of(context).pop();
+
+      showToast("Something went wrong", Colors.red);
+    });
   }
 
   _signOut() async {
@@ -288,8 +319,23 @@ void showToast(message, Color color) {
       fontSize: 16.0);
 }
 
-void saveUserInfo() async {
+_dialog(context) {
+  return showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height,
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      });
+}
+
+void saveUserInfo(String uid) async {
   var preferences = await SharedPreferences.getInstance();
 
   preferences.setBool("User", true);
+  preferences.setString("UserId", uid);
 }

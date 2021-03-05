@@ -1,13 +1,14 @@
+import 'package:broadcastr_ui/NavigatorBar.dart';
+import 'package:broadcastr_ui/screens/RegisterationForm.dart';
 import 'package:broadcastr_ui/screens/otp_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../NavigatorBar.dart';
-
 class Register extends StatefulWidget {
   final Function toggleView;
-  Register({this.toggleView});
+  bool checkSignIn;
+  Register(this.checkSignIn, {this.toggleView});
 
   @override
   _RegisterState createState() => _RegisterState();
@@ -28,14 +29,7 @@ class _RegisterState extends State<Register> {
       appBar: AppBar(
         backgroundColor: Colors.red,
         elevation: 0.0,
-        title: Text('Email Sign Up'),
-        actions: <Widget>[
-          FlatButton.icon(
-              icon: Icon(Icons.person),
-              label: Text('Sign In'),
-              // onPressed: () => widget.toggleView(),
-              onPressed: () {}),
-        ],
+        title: Text(widget.checkSignIn ? 'Email Sign In' : 'Email Sign Up'),
       ),
       body: Container(
         padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
@@ -64,17 +58,21 @@ class _RegisterState extends State<Register> {
             SizedBox(height: 20.0),
             TextFormField(
                 decoration: InputDecoration(hintText: 'Enter Password'),
+                obscureText: true,
                 validator: (val) =>
                     val.length < 6 ? 'Enter a password 6+ chars long' : null,
-                obscureText: true,
                 onChanged: (val) {
                   setState(() => password = val);
                 }),
             SizedBox(height: 10.0),
-            RaisedButton(
-                color: Colors.pink[400],
+            ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.pink[400],
+                  onPrimary: Colors.white,
+                  onSurface: Colors.grey,
+                ),
                 child: Text(
-                  'Register',
+                  widget.checkSignIn ? 'Login' : 'Register',
                   style: TextStyle(color: Colors.white),
                 ),
                 onPressed: () async {
@@ -86,29 +84,61 @@ class _RegisterState extends State<Register> {
                     //   setState(() {
                     //     error = 'Please supply a valid email';
                     //   });
-                    // }
+                    // }\
 
-                    FirebaseAuth.instance
-                        .createUserWithEmailAndPassword(
-                            email: email, password: password)
-                        .then((value) {
-                      Navigator.of(context).pop();
+                    if (widget.checkSignIn) {
+                      FirebaseAuth.instance
+                          .signInWithEmailAndPassword(
+                              email: email, password: password)
+                          .then((value) {
+                        if (value.user != null) {
+                          saveUserInfo(value.user.uid);
+                          print("UserCreated  " + value.user.uid);
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop();
 
-                      if (value.user != null) {
-                        saveUserInfo();
-                        print("UserCreated");
+                          Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      MyNavigationBar(index: 0)));
+                        } else {
+                          showToast("User not exist Please SignUp", Colors.red);
+                        }
+                      }).catchError((onError) {
+                        print(onError.message);
                         Navigator.of(context).pop();
+
+                        showToast(
+                            onError.message + "\n Please SignUp", Colors.red);
+                      });
+                    } else {
+                      FirebaseAuth.instance
+                          .createUserWithEmailAndPassword(
+                              email: email, password: password)
+                          .then((value) {
                         Navigator.of(context).pop();
 
-                        Navigator.of(context).pushReplacement(MaterialPageRoute(
-                            builder: (context) => MyNavigationBar()));
-                      }
-                    }).catchError((onError) {
-                      Navigator.of(context).pop();
+                        if (value.user != null) {
+                          saveUserInfo(value.user.uid);
+                          print("UserCreated  " + value.user.uid);
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop();
 
-                      print(onError);
-                      showToast("Network error!", Colors.red);
-                    });
+                          Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                  builder: (context) => RegistrationForm(
+                                      email: email,
+                                      password: password,
+                                      uid: value.user.uid,
+                                      PhoneNumber: "")));
+                        }
+                      }).catchError((onError) {
+                        Navigator.of(context).pop();
+
+                        print(onError);
+                        showToast("Network error!", Colors.red);
+                      });
+                    }
                   }
                 }),
             SizedBox(height: 12.0),
@@ -122,10 +152,11 @@ class _RegisterState extends State<Register> {
     );
   }
 
-  void saveUserInfo() async {
+  void saveUserInfo(String uid) async {
     var preferences = await SharedPreferences.getInstance();
 
     preferences.setBool("User", true);
+    preferences.setString("UserId", uid);
   }
 
   void Dialog() {
